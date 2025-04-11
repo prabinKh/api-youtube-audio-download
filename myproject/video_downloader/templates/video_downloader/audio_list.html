@@ -1,0 +1,610 @@
+<!-- templates/video_downloader/audio_list.html -->
+{% extends 'base.html' %}
+
+{% block title %}All Audio Files{% endblock %}
+
+{% block extra_css %}
+<style>
+  .audio-list-container {
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+  }
+  
+  .audio-list-container::before {
+    content: "";
+    position: absolute;
+    top: -50px;
+    right: -50px;
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(76, 201, 240, 0.1) 0%, rgba(67, 97, 238, 0.05) 100%);
+    z-index: -1;
+  }
+  
+  .audio-list-container::after {
+    content: "";
+    position: absolute;
+    bottom: -30px;
+    left: -30px;
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(67, 97, 238, 0.1) 0%, rgba(76, 201, 240, 0.05) 100%);
+    z-index: -1;
+  }
+  
+  .audio-row {
+    transition: all 0.1s ease;
+    position: relative;
+  }
+  
+  .audio-row:hover {
+    background-color: rgba(67, 97, 238, 0.05);
+    transform: translateY(-2px);
+  }
+  
+  .audio-row td {
+    vertical-align: middle;
+  }
+  
+  .audio-name {
+    font-weight: 500;
+    color: var(--dark-color);
+    transition: all 0.1s ease;
+    cursor: pointer;
+  }
+  
+  .audio-row:hover .audio-name {
+    color: var(--primary-color);
+  }
+  
+  .audio-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .play-btn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    color: black;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+  }
+  
+  .play-btn:hover {
+    transform: scale(1.1);
+    background-color: var(--primary-color);
+  }
+  
+  .play-btn.playing {
+    animation: pulse 1.5s ease infinite;
+  }
+  
+  @keyframes pulse {
+    0% {
+      box-shadow: 0 0 0 0 rgba(67, 97, 238, 0.4);
+    }
+    70% {
+      box-shadow: 0 0 0 10px rgba(67, 97, 238, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(67, 97, 238, 0);
+    }
+  }
+  
+  .audio-progress {
+    height: 6px;
+    flex-grow: 1;
+    background-color:rgb(49, 42, 49);
+    border-radius: 3px;
+    overflow: hidden;
+    cursor: pointer;
+  }
+  
+  .progress-bar {
+    height: 100%;
+    background-color: var(--primary-color);
+    width: 0%;
+    transition: width 0.1s linear;
+  }
+  
+  .audio-duration {
+    font-size: 12px;
+    color: #6c757d;
+    white-space: nowrap;
+  }
+  
+  .audio-wave {
+    display: inline-flex;
+    align-items: center;
+    height: 15px;
+    margin-right: 8px;
+  }
+  
+  .audio-wave span {
+    display: inline-block;
+    width: 2px;
+    height: 100%;
+    margin-right: 2px;
+    background-color: #4361ee;
+    border-radius: 2px;
+    animation: wave 0.2s ease-in-out infinite;
+    opacity: 0;
+  }
+  
+  .audio-wave.active span {
+    opacity: 1;
+  }
+  
+  .audio-wave span:nth-child(2) {
+    animation-delay: 0.1s;
+  }
+  
+  .audio-wave span:nth-child(3) {
+    animation-delay: 0.2s;
+  }
+  
+  .audio-wave span:nth-child(4) {
+    animation-delay: 0.3s;
+  }
+  
+  @keyframes wave {
+    0%, 100% {
+      height: 6px;
+    }
+    50% {
+      height: 12px;
+    }
+  }
+  
+  .download-btn-list {
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .download-btn-list::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%);
+    z-index: -1;
+    transition: all 0.1s ease;
+  }
+  
+  .download-btn-list:hover::before {
+    left: 100%;
+  }
+  
+  .download-icon {
+    transition: all 0.3s ease;
+  }
+  
+  .download-btn-list:hover .download-icon {
+    transform: translateY(-2px);
+  }
+  
+  .url-link {
+    color: var(--primary-color);
+    transition: all 0.3s ease;
+    text-decoration: none;
+  }
+  
+  .url-link:hover {
+    color: var(--secondary-color);
+    text-decoration: underline;
+  }
+  
+  .pagination .page-item.active .page-link {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+  }
+  
+  .pagination .page-link {
+    color: var(--primary-color);
+    transition: all 0.3s ease;
+  }
+  
+  .pagination .page-link:hover {
+    background-color: rgba(67, 97, 238, 0.1);
+  }
+  
+  .table-header {
+    background-color: rgba(67, 97, 238, 0.05);
+  }
+  
+  .add-new-btn {
+    transition: all 0.3s ease;
+  }
+  
+  .add-new-btn:hover {
+    transform: translateY(-2px);
+  }
+  
+  .volume-control {
+    display: flex;
+    align-items: center;
+    width: 100px;
+    margin-left: 10px;
+  }
+  
+  .volume-icon {
+    margin-right: 5px;
+    cursor: pointer;
+  }
+  
+  .volume-slider {
+    width: 60px;
+    height: 4px;
+    -webkit-appearance: none;
+    background: #e9ecef;
+    border-radius: 2px;
+    outline: none;
+  }
+  
+  .volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    cursor: pointer;
+  }
+  
+  .actions-cell {
+    min-width: 140px;
+  }
+  
+  /* For better mobile responsiveness */
+  @media (max-width: 767.98px) {
+    .audio-controls {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    
+    .audio-progress {
+      width: 100%;
+      margin-top: 10px;
+    }
+    
+    .volume-control {
+      margin-left: 0;
+      margin-top: 10px;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card audio-list-container animate__animated animate__fadeIn">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h2 class="mb-0"><i class="fas fa-music me-2"></i>All Audio Files</h2>
+    <a href="{% url 'home' %}" class="btn btn-primary add-new-btn">
+      <i class="fas fa-plus-circle me-2"></i>Download New
+    </a>
+  </div>
+  <div class="card-body">
+    {% if audio_files %}
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead class="table-header">
+            <tr>
+              <th scope="col"><i class="fas fa-tag me-1"></i>Name</th>
+              <th scope="col"><i class="fas fa-play-circle me-1"></i>Play</th>
+              <th scope="col"><i class="fas fa-calendar-alt me-1"></i>Date Added</th>
+              <th scope="col"><i class="fas fa-link me-1"></i>Original URL</th>
+              <th scope="col" class="text-center actions-cell"><i class="fas fa-download me-1"></i>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for audio in audio_files %}
+              <tr class="audio-row animate__animated animate__fadeIn" style="animation-delay: {{ forloop.counter0|floatformat:1 }}s" data-audio-url="{{ audio.audio_file.url }}" data-audio-id="{{ audio.id }}">
+                <td>
+                  <div class="d-flex align-items-center">
+                    <div class="audio-wave" id="wave-{{ audio.id }}">
+                      <span></span>
+                      <span></span>
+                      <span></span>
+                      <span></span>
+                    </div>
+                    <span class="audio-name">{{ audio.name }}</span>
+                  </div>
+                </td>
+                <td>
+                  <div class="audio-controls">
+                    <button class="play-btn" data-audio-id="{{ audio.id }}">
+                      <i class="fas fa-play" id="play-icon-{{ audio.id }}"></i>
+                    </button>
+                    <div class="audio-progress" id="progress-{{ audio.id }}">
+                      <div class="progress-bar" id="progress-bar-{{ audio.id }}"></div>
+                    </div>
+                    <span class="audio-duration" id="duration-{{ audio.id }}">00:00</span>
+                  </div>
+                </td>
+                <td>
+                  <i class="far fa-clock text-muted me-1"></i>
+                  {{ audio.created_at|date:"F j, Y, g:i a" }}
+                </td>
+                <td>
+                  <a href="{{ audio.video_url }}" target="_blank" class="url-link text-truncate d-inline-block" style="max-width: 250px;">
+                    <i class="fas fa-external-link-alt me-1"></i>
+                    {{ audio.video_url }}
+                  </a>
+                </td>
+                <td class="text-center">
+                  <a href="{{ audio.audio_file.url }}" class="btn btn-sm btn-outline-primary download-btn-list">
+                    <i class="fas fa-download download-icon me-1"></i>Download
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Hidden audio elements for playback -->
+      <div style="display: none;" id="audio-players">
+        {% for audio in audio_files %}
+          <audio id="audio-{{ audio.id }}" preload="metadata">
+            <source src="{{ audio.audio_file.url }}" type="audio/mpeg">
+            Your browser does not support the audio element.
+          </audio>
+        {% endfor %}
+      </div>
+      
+      <!-- Pagination -->
+      {% if is_paginated %}
+        <nav aria-label="Page navigation" class="my-4">
+          <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?page=1">
+                  <i class="fas fa-angle-double-left"></i> First
+                </a>
+              </li>
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
+                  <i class="fas fa-angle-left"></i> Previous
+                </a>
+              </li>
+            {% else %}
+              <li class="page-item disabled">
+                <span class="page-link">
+                  <i class="fas fa-angle-double-left"></i> First
+                </span>
+              </li>
+              <li class="page-item disabled">
+                <span class="page-link">
+                  <i class="fas fa-angle-left"></i> Previous
+                </span>
+              </li>
+            {% endif %}
+            
+            {% for i in paginator.page_range %}
+              {% if page_obj.number == i %}
+                <li class="page-item active">
+                  <span class="page-link">{{ i }}</span>
+                </li>
+              {% elif i > page_obj.number|add:'-3' and i < page_obj.number|add:'3' %}
+                <li class="page-item">
+                  <a class="page-link" href="?page={{ i }}">{{ i }}</a>
+                </li>
+              {% endif %}
+            {% endfor %}
+            
+            {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}">
+                  Next <i class="fas fa-angle-right"></i>
+                </a>
+              </li>
+              <li class="page-item">
+                <a class="page-link" href="?page={{ paginator.num_pages }}">
+                  Last <i class="fas fa-angle-double-right"></i>
+                </a>
+              </li>
+            {% else %}
+              <li class="page-item disabled">
+                <span class="page-link">
+                  Next <i class="fas fa-angle-right"></i>
+                </span>
+              </li>
+              <li class="page-item disabled">
+                <span class="page-link">
+                  Last <i class="fas fa-angle-double-right"></i>
+                </span>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+      {% endif %}
+    {% else %}
+      <div class="text-center py-5">
+        <i class="fas fa-music fa-4x mb-3 text-muted animate__animated animate__pulse animate__infinite"></i>
+        <h4 class="mb-3">No audio files yet</h4>
+        <p class="text-muted mb-4">You haven't downloaded any audio files yet.</p>
+        <a href="{% url 'home' %}" class="btn btn-primary">
+          <i class="fas fa-plus-circle me-2"></i>Download Your First Audio
+        </a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Audio playback functionality
+  let currentlyPlaying = null;
+  const audioPlayers = {};
+  const progressBars = {};
+  const playButtons = {};
+  const waveAnimations = {};
+  const progressIntervals = {};
+  const durationElements = {};
+  
+  // Initialize audio players
+  document.querySelectorAll('.audio-row').forEach(row => {
+    const audioId = row.dataset.audioId;
+    const audioElement = document.getElementById(`audio-${audioId}`);
+    
+    if (audioElement) {
+      // Store references
+      audioPlayers[audioId] = audioElement;
+      progressBars[audioId] = document.getElementById(`progress-bar-${audioId}`);
+      playButtons[audioId] = row.querySelector('.play-btn');
+      waveAnimations[audioId] = document.getElementById(`wave-${audioId}`);
+      durationElements[audioId] = document.getElementById(`duration-${audioId}`);
+      
+      // Format duration once metadata is loaded
+      audioElement.addEventListener('loadedmetadata', function() {
+        durationElements[audioId].textContent = formatTime(audioElement.duration);
+      });
+      
+      // Update progress when audio plays
+      audioElement.addEventListener('timeupdate', function() {
+        if (audioElement.duration > 0) {
+          const percentage = (audioElement.currentTime / audioElement.duration) * 100;
+          progressBars[audioId].style.width = `${percentage}%`;
+          durationElements[audioId].textContent = `${formatTime(audioElement.currentTime)} / ${formatTime(audioElement.duration)}`;
+        }
+      });
+      
+      // Handle audio ended
+      audioElement.addEventListener('ended', function() {
+        resetAudioPlayer(audioId);
+        currentlyPlaying = null;
+      });
+      
+      // Play/pause button click
+      playButtons[audioId].addEventListener('click', function() {
+        if (currentlyPlaying && currentlyPlaying !== audioId) {
+          // Stop currently playing audio
+          resetAudioPlayer(currentlyPlaying);
+        }
+        
+        togglePlayPause(audioId);
+      });
+      
+      // Progress bar click for seeking
+      document.getElementById(`progress-${audioId}`).addEventListener('click', function(e) {
+        if (audioElement.duration > 0) {
+          const clickPosition = (e.offsetX / this.offsetWidth);
+          audioElement.currentTime = clickPosition * audioElement.duration;
+        }
+      });
+      
+      // Name click to play audio
+      row.querySelector('.audio-name').addEventListener('click', function() {
+        if (currentlyPlaying && currentlyPlaying !== audioId) {
+          resetAudioPlayer(currentlyPlaying);
+        }
+        
+        togglePlayPause(audioId);
+      });
+    }
+  });
+  
+  // Toggle play/pause
+  function togglePlayPause(audioId) {
+    const audioElement = audioPlayers[audioId];
+    const playIcon = document.getElementById(`play-icon-${audioId}`);
+    
+    if (audioElement.paused) {
+      // Start playing
+      audioElement.play()
+        .then(() => {
+          currentlyPlaying = audioId;
+          playIcon.classList.remove('fa-play');
+          playIcon.classList.add('fa-pause');
+          playButtons[audioId].classList.add('playing');
+          waveAnimations[audioId].classList.add('active');
+        })
+        .catch(error => {
+          console.error('Error playing audio:', error);
+        });
+    } else {
+      // Pause
+      audioElement.pause();
+      playIcon.classList.remove('fa-pause');
+      playIcon.classList.add('fa-play');
+      playButtons[audioId].classList.remove('playing');
+      waveAnimations[audioId].classList.remove('active');
+      currentlyPlaying = null;
+    }
+  }
+  
+  // Reset audio player state
+  function resetAudioPlayer(audioId) {
+    const audioElement = audioPlayers[audioId];
+    const playIcon = document.getElementById(`play-icon-${audioId}`);
+    
+    if (audioElement) {
+      audioElement.pause();
+      audioElement.currentTime = 0;
+      playIcon.classList.remove('fa-pause');
+      playIcon.classList.add('fa-play');
+      playButtons[audioId].classList.remove('playing');
+      waveAnimations[audioId].classList.remove('active');
+      progressBars[audioId].style.width = '0%';
+      durationElements[audioId].textContent = formatTime(audioElement.duration);
+    }
+  }
+  
+  // Format time in MM:SS
+  function formatTime(seconds) {
+    if (isNaN(seconds)) return '00:00';
+    
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }
+  
+  // Preload audio metadata in the background for faster response
+  setTimeout(() => {
+    Object.values(audioPlayers).forEach(audio => {
+      if (audio.readyState === 0) {
+        audio.load();
+      }
+    });
+  }, 1000);
+  
+  // Add hover animation to table rows
+  const audioRows = document.querySelectorAll('.audio-row');
+  audioRows.forEach(row => {
+    row.addEventListener('mouseenter', function() {
+      this.classList.add('animate__animated', 'animate__pulse');
+      setTimeout(() => {
+        this.classList.remove('animate__animated', 'animate__pulse');
+      }, 800);
+    });
+  });
+  
+  // Add animation to download buttons
+  const downloadButtons = document.querySelectorAll('.download-btn-list');
+  downloadButtons.forEach(btn => {
+    btn.addEventListener('mouseenter', function() {
+      const icon = this.querySelector('.download-icon');
+      icon.classList.add('animate__animated', 'animate__bounceIn');
+      setTimeout(() => {
+        icon.classList.remove('animate__animated', 'animate__bounceIn');
+      }, 800);
+    });
+  });
+});
+</script>
+{% endblock %}

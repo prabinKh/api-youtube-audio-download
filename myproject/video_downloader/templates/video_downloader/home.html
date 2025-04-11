@@ -1,0 +1,400 @@
+<!-- templates/video_downloader/home.html -->
+{% extends 'base.html' %}
+
+{% block title %}Audio Downloader - Home{% endblock %}
+
+{% block extra_css %}
+<style>
+  .download-form-container {
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+  }
+  
+  .download-form-container::before {
+    content: "";
+    position: absolute;
+    top: -50px;
+    right: -50px;
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(76, 201, 240, 0.1) 0%, rgba(67, 97, 238, 0.05) 100%);
+    z-index: -1;
+  }
+  
+  .download-form-container::after {
+    content: "";
+    position: absolute;
+    bottom: -30px;
+    left: -30px;
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(67, 97, 238, 0.1) 0%, rgba(76, 201, 240, 0.05) 100%);
+    z-index: -1;
+  }
+  
+  .form-control {
+    border-radius: 8px;
+    padding: 12px;
+    border: 1px solid #e0e0e0;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+  }
+  
+  .form-control:focus {
+    border-color: #4361ee;
+    box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
+  }
+  
+  .audio-item {
+    transition: all 0.3s ease;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  
+  .audio-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  }
+  
+  .download-btn {
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+  }
+  
+  .download-btn::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%);
+    z-index: -1;
+    transition: all 0.6s ease;
+  }
+  
+  .download-btn:hover::before {
+    left: 100%;
+  }
+  
+  .download-icon {
+    transition: all 0.3s ease;
+  }
+  
+  .audio-item:hover .download-icon {
+    transform: translateY(-3px);
+  }
+  
+  .audio-wave {
+    display: flex;
+    align-items: center;
+    height: 20px;
+  }
+  
+  .audio-wave span {
+    display: inline-block;
+    width: 3px;
+    height: 100%;
+    margin-right: 3px;
+    background-color: #4361ee;
+    border-radius: 3px;
+    animation: wave 1.2s ease-in-out infinite;
+  }
+  
+  .audio-wave span:nth-child(2) {
+    animation-delay: 0.1s;
+  }
+  
+  .audio-wave span:nth-child(3) {
+    animation-delay: 0.2s;
+  }
+  
+  .audio-wave span:nth-child(4) {
+    animation-delay: 0.3s;
+  }
+  
+  .audio-wave span:nth-child(5) {
+    animation-delay: 0.4s;
+  }
+  
+  @keyframes wave {
+    0%, 100% {
+      height: 8px;
+    }
+    50% {
+      height: 16px;
+    }
+  }
+  
+  .success-animation {
+    display: inline-block;
+    width: 60px;
+    height: 60px;
+    margin: 0 auto;
+  }
+  
+  .checkmark {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    display: block;
+    stroke-width: 6;
+    stroke: #4CC9F0;
+    stroke-miterlimit: 10;
+    box-shadow: inset 0px 0px 0px #4CC9F0;
+    animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both;
+  }
+  
+  .checkmark__circle {
+    stroke-dasharray: 166;
+    stroke-dashoffset: 166;
+    stroke-width: 6;
+    stroke-miterlimit: 10;
+    stroke: #4CC9F0;
+    fill: none;
+    animation: stroke .6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+  }
+  
+  .checkmark__check {
+    transform-origin: 50% 50%;
+    stroke-dasharray: 48;
+    stroke-dashoffset: 48;
+    animation: stroke .3s cubic-bezier(0.65, 0, 0.45, 1) .8s forwards;
+  }
+  
+  @keyframes stroke {
+    100% {
+      stroke-dashoffset: 0;
+    }
+  }
+  
+  @keyframes scale {
+    0%, 100% {
+      transform: none;
+    }
+    50% {
+      transform: scale3d(1.1, 1.1, 1);
+    }
+  }
+  
+  @keyframes fill {
+    100% {
+      box-shadow: inset 0px 0px 0px 30px transparent;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-lg-6 mb-4">
+    <div class="card download-form-container animate__animated animate__fadeInLeft">
+      <div class="card-header d-flex align-items-center">
+        <i class="fas fa-download me-2"></i>
+        <h2 class="mb-0">Download New Audio</h2>
+      </div>
+      <div class="card-body">
+        <form id="downloadForm">
+          <div class="mb-4">
+            <label for="video_url" class="form-label">
+              <i class="fas fa-link me-2"></i>Video URL
+            </label>
+            <input type="url" class="form-control form-control-lg" id="video_url" name="video_url" 
+                   placeholder="Enter YouTube video URL" required>
+          </div>
+          <div class="mb-4">
+            <label for="name" class="form-label">
+              <i class="fas fa-tag me-2"></i>Audio Name
+            </label>
+            <input type="text" class="form-control form-control-lg" id="name" name="name" 
+                   placeholder="Enter a name for this audio file" required>
+          </div>
+          <button type="submit" class="btn btn-primary btn-lg w-100 download-btn" id="downloadBtn">
+            <i class="fas fa-download me-2"></i>Download Audio
+            <span class="spinner-border spinner-border-sm d-none" id="loadingSpinner"></span>
+          </button>
+        </form>
+        
+        <div class="alert alert-success mt-4 d-none text-center" id="successAlert">
+          <div class="success-animation mb-3">
+            <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+              <circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none"/>
+              <path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+            </svg>
+          </div>
+          <h5>Audio Downloaded Successfully!</h5>
+          <p class="mb-3">Your audio is ready to be played or downloaded.</p>
+          <a href="#" id="audioLink" class="btn btn-outline-primary">
+            <i class="fas fa-download me-2"></i>Download Audio File
+          </a>
+        </div>
+        
+        <div class="alert alert-danger mt-4 d-none" id="errorAlert">
+          <i class="fas fa-exclamation-circle me-2"></i>
+          <span id="errorMessage"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-6">
+    <div class="card animate__animated animate__fadeInRight">
+      <div class="card-header d-flex align-items-center">
+        <i class="fas fa-history me-2"></i>
+        <h2 class="mb-0">Recent Downloads</h2>
+      </div>
+      <div class="card-body p-0">
+        {% if recent_audios %}
+          <div class="list-group list-group-flush">
+            {% for audio in recent_audios %}
+              <div class="list-group-item audio-item p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <h5 class="mb-1">
+                      <i class="fas fa-music me-2 text-primary"></i>
+                      {{ audio.name }}
+                    </h5>
+                    <div class="d-flex align-items-center mb-2">
+                      <div class="audio-wave me-2">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                      </div>
+                      <small class="text-muted">{{ audio.created_at|date:"F j, Y, g:i a" }}</small>
+                    </div>
+                    <small class="text-truncate d-inline-block" style="max-width: 300px;">
+                      <i class="fas fa-link me-1 text-muted"></i>
+                      <a href="{{ audio.video_url }}" target="_blank" class="text-decoration-none">
+                        {{ audio.video_url }}
+                      </a>
+                    </small>
+                  </div>
+                  <a href="{{ audio.audio_file.url }}" class="btn btn-sm btn-outline-primary download-btn">
+                    <i class="fas fa-download download-icon"></i>
+                  </a>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+          <div class="p-3 text-center">
+            <a href="{% url 'audio-list' %}" class="btn btn-outline-primary">
+              <i class="fas fa-list me-2"></i>View All Audio Files
+            </a>
+          </div>
+        {% else %}
+          <div class="p-4 text-center">
+            <i class="fas fa-music fa-4x mb-3 text-muted"></i>
+            <p class="text-muted">No audio files have been downloaded yet.</p>
+            <p>Enter a video URL above to download your first audio!</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const downloadForm = document.getElementById('downloadForm');
+  const downloadBtn = document.getElementById('downloadBtn');
+  const loadingSpinner = document.getElementById('loadingSpinner');
+  const successAlert = document.getElementById('successAlert');
+  const errorAlert = document.getElementById('errorAlert');
+  const errorMessage = document.getElementById('errorMessage');
+  const audioLink = document.getElementById('audioLink');
+
+  downloadForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Hide alerts and show loading
+    successAlert.classList.add('d-none');
+    errorAlert.classList.add('d-none');
+    downloadBtn.disabled = true;
+    downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+    loadingSpinner.classList.remove('d-none');
+    
+    const formData = {
+      video_url: document.getElementById('video_url').value,
+      name: document.getElementById('name').value
+    };
+    
+    fetch('{% url "api-audio-create" %}', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken')
+      },
+      body: JSON.stringify(formData)
+    })
+    .then(response => response.json().then(data => ({ status: response.status, data })))
+    .then(({ status, data }) => {
+      downloadBtn.disabled = false;
+      downloadBtn.innerHTML = '<i class="fas fa-download me-2"></i>Download Audio';
+      loadingSpinner.classList.add('d-none');
+      
+      if (status >= 200 && status < 300) {
+        // Success
+        successAlert.classList.remove('d-none');
+        successAlert.classList.add('animate__animated', 'animate__fadeIn');
+        audioLink.href = data.audio_file;
+        downloadForm.reset();
+        
+        // Refresh the page after 5 seconds to show the new download in recent list
+        setTimeout(() => {
+          window.location.reload();
+        }, 5000);
+      } else {
+        // Error
+        errorMessage.textContent = data.error || 'An error occurred while processing your request';
+        errorAlert.classList.remove('d-none');
+        errorAlert.classList.add('animate__animated', 'animate__shakeX');
+      }
+    })
+    .catch(error => {
+      downloadBtn.disabled = false;
+      downloadBtn.innerHTML = '<i class="fas fa-download me-2"></i>Download Audio';
+      loadingSpinner.classList.add('d-none');
+      errorMessage.textContent = 'Network error occurred. Please check your connection and try again.';
+      errorAlert.classList.remove('d-none');
+      errorAlert.classList.add('animate__animated', 'animate__shakeX');
+      console.error('Error:', error);
+    });
+  });
+  
+  // Helper function to get CSRF token
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+  
+  // Add animation to form inputs
+  const formInputs = document.querySelectorAll('.form-control');
+  formInputs.forEach(input => {
+    input.addEventListener('focus', function() {
+      this.parentElement.classList.add('animate__animated', 'animate__pulse');
+      setTimeout(() => {
+        this.parentElement.classList.remove('animate__animated', 'animate__pulse');
+      }, 1000);
+    });
+  });
+});
+</script>
+{% endblock %}
